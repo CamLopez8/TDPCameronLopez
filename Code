@@ -1,0 +1,51 @@
+library(readxl)
+library(tidyr)
+library(plyr)
+library(eeptools)
+library(Hmisc)
+
+financeTest <- read_excel("~/Downloads/Copy of tdp_finance_test_data_takehome.xlsm")
+#Get top results
+financeTest[ order(-financeTest$donation_amount, financeTest$first_name),]
+#CreateID's
+financeTest <- within(financeTest,  id <- paste(first_name, last_name, birthdate, sep=""))
+uniqvals <- unique(financeTest$id)
+length(uniqvals)
+#Count the frequency of events
+countedids <-as.data.frame(table(financeTest$id))
+countedids$frequent <- countedids$freq
+#This part of my code broke, but after I received the answers, I was using Count from tidyr
+countedcountedids <- as.data.frame(table(countedids, "Freq"))
+#Get top 5 donaters in one dataframe
+tempdataCounty <- aggregate(financeTest$donation_amount~ financeTest$county, data=financeTest, sum)
+tempdataCounty$Count <- count(financeTest, "county")
+#had this weird dataframe within dataframe but just pushed through it due to time constraints
+tempdataCounty$average <- tempdataCounty$`financeTest$donation_amount`/tempdataCounty$Count.freq
+tempdataCounty$donationSum <- tempdataCounty$`financeTest$donation_amount`
+tempdataCounty$CountSum <- tempdataCounty$Count$freq
+tempdataCounty$average <- tempdataCounty$donationSum/tempdataCounty$CountSum
+#Finished Situational Data Test using above
+#But their Emails
+#Just did total number of rows on this, not ideal but works 
+emaildomainsplits <- separate(testemaildata, domain, c("c","address","domain"))
+#Count completely stopped working, so moving to using Table()
+testemaildataCount <- count(emaildomainsplits, 'domain')
+table(emaildomainsplits$domain)
+
+
+#Onto Next Part
+MaxDonationsDate <-as.data.frame(table(financeTest$donation_date))
+MaxDonationsDate$Date <- MaxDonationsDate$Var1
+#Shifting Factors to Dates
+MaxDonationsDate$Var1 <- as.Date(MaxDonationsDate$Var1)
+financeTest$donation_date <- as.Date(financeTest$donation_date)
+financeTest$birthdate <- as.Date(financeTest$birthdate)
+#Graphs
+a<-ggplot(MaxDonationsDate, aes(Var1, Freq))
+a +geom_smooth()
+financeTest$AgeYears <- age_calc(financeTest$birthdate, enddate = Sys.Date(), units = "years", precise = TRUE)
+b <- ggplot(financeTest, aes(donation_date, AgeYears))
+b + geom_smooth()
+#description Summaries
+summary(financeTest$AgeYears)
+describe(financeTest$AgeYears)
